@@ -7,7 +7,7 @@ import requests
 from colorthief import ColorThief
 from base64 import b64encode
 from dotenv import load_dotenv, find_dotenv
-from flask import Flask, Response, render_template, request
+from flask import Flask, Response, render_template, request, redirect
 
 load_dotenv(find_dotenv())
 
@@ -110,6 +110,7 @@ def getTemplate():
         print(f"Failed to load templates.\r\n```{e}```")
         return FALLBACK_THEME
 
+
 def loadImageB64(url):
     response = requests.get(url)
     return b64encode(response.content).decode("ascii")
@@ -121,7 +122,7 @@ def makeSVG(data, background_color, border_color):
     barCSS = barGen(barCount)
 
     if not "is_playing" in data:
-        #contentBar = "" #Shows/Hides the EQ bar if no song is currently playing
+        # contentBar = "" #Shows/Hides the EQ bar if no song is currently playing
         currentStatus = "Recently played:"
         recentPlays = get(RECENTLY_PLAYING_URL)
         recentPlaysLength = len(recentPlays["items"])
@@ -181,6 +182,18 @@ def catch_all(path):
     resp.headers["Cache-Control"] = "s-maxage=1"
 
     return resp
+
+
+@app.route("/url", defaults={"path": ""})
+@app.route("/<path:path>/url")
+def url(path):
+    try:
+        data = get(NOW_PLAYING_URL)
+    except Exception:
+        data = get(RECENTLY_PLAYING_URL)
+
+    print(data)
+    return redirect(data["item"]["external_urls"]["spotify"])
 
 
 if __name__ == "__main__":
